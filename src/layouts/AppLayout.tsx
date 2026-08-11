@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ListChecks, ClipboardCheck, Stamp, Users, LogOut, FileText, Eye } from 'lucide-react'
+import { LayoutDashboard, ListChecks, ClipboardCheck, Stamp, Users, LogOut, Eye } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import type { AppRole } from '@/types'
 
@@ -48,9 +48,7 @@ export function AppLayout() {
       <header className="sticky top-0 z-20 border-b border-brand-line bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-ink text-white">
-              <FileText size={18} />
-            </div>
+            <img src="/favicon-192x192.png" alt="" className="h-9 w-9 shrink-0" />
             <div>
               <p className="text-sm font-bold leading-tight text-brand-ink">Shop Drawing Tracker</p>
               <p className="text-xs leading-tight text-brand-slate">The Spinnaker at Club Laiya</p>

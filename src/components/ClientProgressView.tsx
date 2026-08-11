@@ -5,56 +5,32 @@ import { StatCard } from '@/components/StatCard'
 import {
   fetchClientApprovedPdfs,
   fetchClientDrawings,
-  fetchClientTimeline,
   getPublicSignedUrl,
   type ClientDrawingRow,
   type ClientPdfRow,
-  type ClientTimelineRow,
 } from '@/services/clientDashboardService'
 import type { DrawingStatus } from '@/types'
 import { DRAWING_STATUSES, STATUS_LABELS } from '@/types'
 
-const ACTION_LABEL: Record<string, string> = {
-  created: 'Drawing item added to register',
-  assigned: 'Assigned to draftsman',
-  started_drafting: 'Drafting started',
-  uploaded_pdf: 'Drawing PDF uploaded',
-  marked_complete: 'Draftsman marked complete',
-  returned_to_draftsman: 'Returned to draftsman',
-  submitted_to_daaa: 'Submitted to DAAA',
-  daaa_started_review: 'DAAA started review',
-  daaa_approved: 'DAAA approved — forwarded to GPI',
-  daaa_revision_requested: 'DAAA requested revision',
-  gpi_started_review: 'GPI started final review',
-  gpi_approved: 'GPI approved — final approved drawing',
-  gpi_revision_requested: 'GPI requested revision',
-  gpi_rejected: 'GPI rejected submission',
-  revision_reassigned: 'Revision reassigned to draftsman',
-  marked_completed: 'Marked completed',
-  edited: 'Drawing details updated',
-}
-
 /**
- * The read-only progress view: stats, search/filter, drawing list grouped
- * by category with approved-PDF links, and a recent timeline. Shared by
- * the public Client Transparency Dashboard (/client, no login) and the
- * authenticated Landco (project owner) view — both read the exact same
- * curated client_dashboard_* views, so they always show identical data.
+ * The read-only progress view: stats and a drawing list grouped by batch
+ * then category, with approved-PDF links. Shared by the public Client
+ * Transparency Dashboard (/client, no login) and every authenticated
+ * read-only role (DAAA/GPI's Progress tab, Landco) — all read the exact
+ * same curated client_dashboard_* views, so they always show identical data.
  */
 export function ClientProgressView() {
   const [drawings, setDrawings] = useState<ClientDrawingRow[]>([])
   const [pdfs, setPdfs] = useState<ClientPdfRow[]>([])
-  const [timeline, setTimeline] = useState<ClientTimelineRow[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<DrawingStatus | 'all'>('all')
 
   useEffect(() => {
-    Promise.all([fetchClientDrawings(), fetchClientApprovedPdfs(), fetchClientTimeline()])
-      .then(([d, p, t]) => {
+    Promise.all([fetchClientDrawings(), fetchClientApprovedPdfs()])
+      .then(([d, p]) => {
         setDrawings(d)
         setPdfs(p)
-        setTimeline(t)
       })
       .finally(() => setLoading(false))
   }, [])
@@ -197,21 +173,6 @@ export function ClientProgressView() {
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="rounded-xl border border-brand-line bg-white p-4 shadow-card">
-        <h2 className="mb-3 text-sm font-bold text-brand-ink">Recent Timeline</h2>
-        <ul className="space-y-2">
-          {timeline.slice(0, 30).map((t, i) => (
-            <li key={i} className="flex items-baseline justify-between gap-3 border-b border-brand-line pb-2 text-sm last:border-0">
-              <span className="text-brand-ink">
-                {ACTION_LABEL[t.action] ?? t.action}
-                {t.comments && <span className="text-brand-slate"> — {t.comments}</span>}
-              </span>
-              <span className="shrink-0 text-xs text-brand-slate">{new Date(t.date).toLocaleDateString()}</span>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   )

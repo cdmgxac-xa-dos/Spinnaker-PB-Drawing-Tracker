@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, ShieldCheck, Users, Loader2 } from 'lucide-react'
+import { ShieldCheck, Users, Loader2 } from 'lucide-react'
 import {
   adminExists,
   bootstrapFirstAdmin,
@@ -113,9 +113,7 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-brand-ink px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center text-white">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
-            <FileText size={24} />
-          </div>
+          <img src="/favicon-192x192.png" alt="" className="mb-3 h-14 w-14" />
           <h1 className="text-xl font-bold">Shop Drawing Transparency Tracker</h1>
           <p className="mt-1 text-sm text-white/70">The Spinnaker at Club Laiya — CP19</p>
         </div>
