@@ -78,11 +78,16 @@ export async function signInWithPassword(email: string, password: string) {
 }
 
 /**
- * Draftsman / DAAA / GPI sign-in: no password prompt. Calls the
- * passwordless-login Edge Function, which mints a real session server-side
- * using the service-role key, then installs it in the browser client.
+ * Draftsman / DAAA / GPI / Landco sign-in: no password to type, but a real
+ * magic-link email that must actually be opened — this is what stops
+ * anyone with the login link from just clicking someone else's name.
+ * The Edge Function looks up the account's real email server-side (never
+ * sent to this browser) and triggers Supabase's own magic-link email.
+ * There's no token to install here; the session only gets created once the
+ * person clicks the link in their inbox and lands back on the site, which
+ * supabase-js picks up automatically (detectSessionInUrl).
  */
-export async function signInPasswordless(profileId: string) {
+export async function requestMagicLink(profileId: string): Promise<{ full_name: string }> {
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/passwordless-login`
   const res = await fetch(url, {
     method: 'POST',
@@ -93,13 +98,8 @@ export async function signInPasswordless(profileId: string) {
     body: JSON.stringify({ profile_id: profileId }),
   })
   const body = await res.json()
-  if (!res.ok) throw new Error(body.error ?? 'Sign-in failed')
-
-  const { error } = await requireSupabase().auth.setSession({
-    access_token: body.access_token,
-    refresh_token: body.refresh_token,
-  })
-  if (error) throw error
+  if (!res.ok) throw new Error(body.error ?? 'Could not send sign-in email')
+  return { full_name: body.full_name }
 }
 
 export async function changePassword(newPassword: string) {

@@ -1,17 +1,20 @@
 // Supabase Edge Function: passwordless-login
 //
 // Per the spec, only the XA Admin / Site Engineer account is password
-// protected (default "0000", forced change on first login). Draftsman,
-// DAAA and GPI accounts need "no password required" — but they still need
-// a real, RLS-respecting Supabase Auth session so the workflow RPCs can
-// tell who is calling them.
+// protected (default "000000", forced change on first login). Draftsman,
+// DAAA, GPI and Landco accounts need "no password required" — but that
+// must still prove it's really them, not just anyone with the login link
+// clicking their name (see the "what stops someone else from picking my
+// name" gap this replaces the fix for).
 //
-// This function is the bridge: given a profile id for a non-admin account,
-// it uses the service-role key (never exposed to the browser) to mint a
-// one-time magic-link OTP and immediately redeems it server-side, then
-// hands the resulting session tokens back to the client. The client just
-// calls supabase.auth.setSession(...) with them. No password ever exists
-// for these accounts, and none is ever sent over the wire.
+// This function is the bridge: given a profile id, it looks up that
+// account's real email server-side (service role — the email is never
+// sent to the browser) and triggers Supabase's own magic-link email via
+// the standard /auth/v1/otp endpoint. The browser never receives a token
+// or a session here — it only finds out "the email was sent." The actual
+// session only gets created when the person opens their real inbox and
+// clicks the link, which supabase-js on the app picks up automatically
+// (detectSessionInUrl) when they land back on the site.
 //
 // Deliberately has zero external imports (plain fetch() to the REST/Auth
 // HTTP API instead of @supabase/supabase-js) — this only needs to run
@@ -19,12 +22,16 @@
 //
 // Deploy with:
 //   supabase functions deploy passwordless-login
-// (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically by
-// the Supabase platform — no extra secrets to set.)
+// (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and SUPABASE_ANON_KEY are
+// injected automatically by the Supabase platform — no extra secrets.)
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
+
+// Must be present in the project's Auth > URL Configuration redirect
+// allow-list, or GoTrue silently falls back to the default Site URL.
+const SITE_URL = 'https://spinnaker-drawing-tracker.netlify.app/'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -63,45 +70,25 @@ Deno.serve(async (req) => {
       return json({ error: 'XA Admin / Site Engineer accounts require a password' }, 403)
     }
 
-    const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-      method: 'POST',
-      headers: {
-        apikey: SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ type: 'magiclink', email: profile.email }),
-    })
-    const link = await linkRes.json()
-    if (!linkRes.ok) {
-      return json({ error: link?.msg ?? link?.error_description ?? 'Could not start sign-in' }, 500)
-    }
-    const otp = link.email_otp
-    if (!otp) {
-      return json({ error: 'Could not generate a sign-in token' }, 500)
-    }
-
-    // Redeem the OTP server-side with the anon key so we get back a real
-    // session (access + refresh token) without ever exposing the OTP.
-    const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+    const otpRes = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
       method: 'POST',
       headers: {
         apikey: ANON_KEY,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ type: 'magiclink', email: profile.email, token: otp }),
+      body: JSON.stringify({
+        email: profile.email,
+        create_user: false,
+        options: { email_redirect_to: SITE_URL },
+      }),
     })
-    const session = await verifyRes.json()
-    if (!verifyRes.ok || !session.access_token) {
-      return json({ error: session?.msg ?? session?.error_description ?? 'Sign-in failed' }, 500)
+    if (!otpRes.ok) {
+      const body = await otpRes.json().catch(() => ({}))
+      return json({ error: body?.msg ?? body?.error_description ?? 'Could not send sign-in email' }, 500)
     }
 
-    return json({
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-      full_name: profile.full_name,
-      role: profile.role,
-    })
+    // Deliberately no tokens, no email address — just confirmation it was sent.
+    return json({ sent: true, full_name: profile.full_name })
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'Unexpected error' }, 500)
   }

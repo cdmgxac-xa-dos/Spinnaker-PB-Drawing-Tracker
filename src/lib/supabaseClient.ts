@@ -14,6 +14,10 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
       auth: {
         persistSession: true,
         autoRefreshToken: true,
+        // Explicit (matches the v2 default for browsers): required so a
+        // magic-link click landing back on the site is picked up
+        // automatically from the URL, without a dedicated /callback route.
+        detectSessionInUrl: true,
       },
     })
   : null

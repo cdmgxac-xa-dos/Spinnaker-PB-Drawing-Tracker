@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Users, Loader2 } from 'lucide-react'
+import { ShieldCheck, Users, Loader2, MailCheck } from 'lucide-react'
 import {
   adminExists,
   bootstrapFirstAdmin,
   loginDirectory,
-  signInPasswordless,
+  requestMagicLink,
   signInWithPassword,
 } from '@/services/authService'
 import { useAuth } from '@/context/AuthContext'
@@ -28,6 +28,7 @@ export function LoginPage() {
   const [tab, setTab] = useState<'admin' | AppRole>('admin')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [sentTo, setSentTo] = useState<string | null>(null)
 
   // Admin login fields
   const [email, setEmail] = useState('')
@@ -87,15 +88,14 @@ export function LoginPage() {
     }
   }
 
-  async function handlePasswordlessLogin(profileId: string) {
+  async function handleRequestMagicLink(profileId: string) {
     setBusy(true)
     setError('')
     try {
-      await signInPasswordless(profileId)
-      await refreshProfile()
-      navigate('/', { replace: true })
+      const { full_name } = await requestMagicLink(profileId)
+      setSentTo(full_name)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign-in failed')
+      setError(e instanceof Error ? e.message : 'Could not send sign-in email')
     } finally {
       setBusy(false)
     }
@@ -140,11 +140,26 @@ export function LoginPage() {
           ) : (
             <>
               <div className="mb-4 flex gap-1 rounded-lg bg-slate-100 p-1">
-                <TabButton active={tab === 'admin'} onClick={() => setTab('admin')}>
+                <TabButton
+                  active={tab === 'admin'}
+                  onClick={() => {
+                    setTab('admin')
+                    setSentTo(null)
+                    setError('')
+                  }}
+                >
                   XA Admin
                 </TabButton>
                 {ROLE_TABS.map(({ role, label }) => (
-                  <TabButton key={role} active={tab === role} onClick={() => setTab(role)}>
+                  <TabButton
+                    key={role}
+                    active={tab === role}
+                    onClick={() => {
+                      setTab(role)
+                      setSentTo(null)
+                      setError('')
+                    }}
+                  >
                     {label}
                   </TabButton>
                 ))}
@@ -157,11 +172,30 @@ export function LoginPage() {
                   {error && <p className="text-sm text-red-600">{error}</p>}
                   <SubmitButton busy={busy} label="Sign in" />
                 </form>
+              ) : sentTo ? (
+                <div className="flex flex-col items-center gap-3 py-4 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-tint text-brand-teal">
+                    <MailCheck size={22} />
+                  </div>
+                  <p className="text-sm font-semibold text-brand-ink">Check your email, {sentTo}</p>
+                  <p className="text-sm text-brand-slate">
+                    We sent a sign-in link to your inbox. Open it on this device to continue —
+                    the link expires after a while, so come back here to resend if it's been a
+                    bit.
+                  </p>
+                  <button
+                    onClick={() => setSentTo(null)}
+                    className="mt-1 text-sm font-semibold text-brand-teal hover:underline"
+                  >
+                    ← Back
+                  </button>
+                </div>
               ) : (
                 <div>
                   <div className="mb-3 flex items-center gap-2 text-sm text-brand-slate">
                     <Users size={15} />
-                    No password needed — select your name to continue.
+                    No password needed — select your name, then check your email for a sign-in
+                    link.
                   </div>
                   <div className="max-h-72 space-y-1.5 overflow-y-auto">
                     {directory.filter((d) => d.role === tab).length === 0 && (
@@ -175,7 +209,7 @@ export function LoginPage() {
                         <button
                           key={d.id}
                           disabled={busy}
-                          onClick={() => handlePasswordlessLogin(d.id)}
+                          onClick={() => handleRequestMagicLink(d.id)}
                           className="flex w-full items-center justify-between rounded-lg border border-brand-line px-3 py-2.5 text-left text-sm font-medium text-brand-ink transition-colors hover:border-brand-teal hover:bg-brand-tint disabled:opacity-50"
                         >
                           {d.full_name}
