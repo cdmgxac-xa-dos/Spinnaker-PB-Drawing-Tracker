@@ -19,7 +19,7 @@ returns void
 language plpgsql security definer set search_path = public as $$
 begin
   insert into review_history (drawing_item_id, user_id, role, action, comments)
-  values (p_item, auth.uid(), current_role(), p_action, p_comments);
+  values (p_item, auth.uid(), app_current_role(), p_action, p_comments);
 end;
 $$;
 
@@ -42,7 +42,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can create drawing items' using errcode = '42501';
   end if;
 
@@ -71,7 +71,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can edit drawing items' using errcode = '42501';
   end if;
 
@@ -100,7 +100,7 @@ $$;
 create or replace function xa_delete_drawing_item(p_item_id uuid) returns void
 language plpgsql security definer set search_path = public as $$
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can delete drawing items' using errcode = '42501';
   end if;
 
@@ -120,7 +120,7 @@ declare
   v_old_status drawing_status;
   v_draftsman_role app_role;
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can assign draftsmen' using errcode = '42501';
   end if;
 
@@ -156,7 +156,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can submit drawings to DAAA' using errcode = '42501';
   end if;
 
@@ -179,7 +179,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can return a drawing to the draftsman' using errcode = '42501';
   end if;
 
@@ -202,7 +202,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can mark a drawing completed' using errcode = '42501';
   end if;
 
@@ -255,7 +255,7 @@ create or replace function xa_upload_pdf(p_item_id uuid, p_storage_path text, p_
 returns drawing_pdfs
 language plpgsql security definer set search_path = public as $$
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can upload drawings here' using errcode = '42501';
   end if;
   return upload_drawing_pdf(p_item_id, p_storage_path, p_file_name);
@@ -269,7 +269,7 @@ declare
   v_assigned uuid;
   v_status drawing_status;
 begin
-  if current_role() <> 'draftsman' then
+  if app_current_role() <> 'draftsman' then
     raise exception 'Only the assigned draftsman can upload here' using errcode = '42501';
   end if;
 
@@ -294,7 +294,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'draftsman' then
+  if app_current_role() <> 'draftsman' then
     raise exception 'Only a draftsman can start a task' using errcode = '42501';
   end if;
 
@@ -317,7 +317,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'draftsman' then
+  if app_current_role() <> 'draftsman' then
     raise exception 'Only a draftsman can mark a drawing complete' using errcode = '42501';
   end if;
 
@@ -349,7 +349,7 @@ declare
   v_role app_role;
   v_assigned uuid;
 begin
-  v_role := current_role();
+  v_role := app_current_role();
   if v_role is null then
     raise exception 'Not signed in' using errcode = '42501';
   end if;
@@ -377,7 +377,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_row drawing_items;
 begin
-  if current_role() <> 'daaa' then
+  if app_current_role() <> 'daaa' then
     raise exception 'Only DAAA can start a technical review' using errcode = '42501';
   end if;
 
@@ -402,7 +402,7 @@ declare
   v_row drawing_items;
   v_status drawing_status;
 begin
-  if current_role() <> 'daaa' then
+  if app_current_role() <> 'daaa' then
     raise exception 'Only DAAA can review this drawing' using errcode = '42501';
   end if;
   if p_decision not in ('approve', 'revision_required') then
@@ -442,7 +442,7 @@ declare
   v_row drawing_items;
   v_status drawing_status;
 begin
-  if current_role() <> 'gpi' then
+  if app_current_role() <> 'gpi' then
     raise exception 'Only GPI can review this drawing' using errcode = '42501';
   end if;
   if p_decision not in ('approve', 'revision_required', 'reject') then
@@ -488,7 +488,7 @@ declare
   v_item jsonb;
   v_count integer := 0;
 begin
-  if current_role() <> 'xa_admin' then
+  if app_current_role() <> 'xa_admin' then
     raise exception 'Only XA can import the drawing register' using errcode = '42501';
   end if;
 

@@ -156,11 +156,11 @@ create trigger trg_drawing_items_touch
   for each row execute function touch_updated_at();
 
 -- ---------------------------------------------------------------------------
--- current_role() — SECURITY DEFINER helper so RLS policies can check the
+-- app_current_role() — SECURITY DEFINER helper so RLS policies can check the
 -- caller's role without re-triggering RLS on profiles (avoids recursion).
 -- ---------------------------------------------------------------------------
 
-create or replace function current_role() returns app_role
+create or replace function app_current_role() returns app_role
 language sql stable security definer set search_path = public as $$
   select role from profiles where id = auth.uid();
 $$;
@@ -194,7 +194,7 @@ create policy profiles_insert_self on profiles
 drop policy if exists profiles_insert_xa_admin on profiles;
 create policy profiles_insert_xa_admin on profiles
   for insert to authenticated
-  with check (current_role() = 'xa_admin');
+  with check (app_current_role() = 'xa_admin');
 
 drop policy if exists profiles_update_self on profiles;
 create policy profiles_update_self on profiles
@@ -205,13 +205,13 @@ create policy profiles_update_self on profiles
 drop policy if exists profiles_update_xa_admin on profiles;
 create policy profiles_update_xa_admin on profiles
   for update to authenticated
-  using (current_role() = 'xa_admin')
-  with check (current_role() = 'xa_admin');
+  using (app_current_role() = 'xa_admin')
+  with check (app_current_role() = 'xa_admin');
 
 drop policy if exists profiles_delete_xa_admin on profiles;
 create policy profiles_delete_xa_admin on profiles
   for delete to authenticated
-  using (current_role() = 'xa_admin');
+  using (app_current_role() = 'xa_admin');
 
 -- drawing_items ------------------------------------------------------------
 -- All mutation for non-admin roles happens through SECURITY DEFINER RPCs in
@@ -227,18 +227,18 @@ create policy drawing_items_select on drawing_items
 drop policy if exists drawing_items_insert_xa on drawing_items;
 create policy drawing_items_insert_xa on drawing_items
   for insert to authenticated
-  with check (current_role() = 'xa_admin');
+  with check (app_current_role() = 'xa_admin');
 
 drop policy if exists drawing_items_update_xa on drawing_items;
 create policy drawing_items_update_xa on drawing_items
   for update to authenticated
-  using (current_role() = 'xa_admin')
-  with check (current_role() = 'xa_admin');
+  using (app_current_role() = 'xa_admin')
+  with check (app_current_role() = 'xa_admin');
 
 drop policy if exists drawing_items_delete_xa on drawing_items;
 create policy drawing_items_delete_xa on drawing_items
   for delete to authenticated
-  using (current_role() = 'xa_admin');
+  using (app_current_role() = 'xa_admin');
 
 -- drawing_pdfs ---------------------------------------------------------------
 -- No client-side INSERT/UPDATE/DELETE policies at all: every row is created
@@ -338,18 +338,18 @@ create policy drawing_pdfs_storage_insert on storage.objects
   for insert to authenticated
   with check (
     bucket_id = 'drawing-pdfs'
-    and current_role() in ('xa_admin', 'draftsman')
+    and app_current_role() in ('xa_admin', 'draftsman')
   );
 
 drop policy if exists drawing_pdfs_storage_update on storage.objects;
 create policy drawing_pdfs_storage_update on storage.objects
   for update to authenticated
-  using (bucket_id = 'drawing-pdfs' and current_role() = 'xa_admin');
+  using (bucket_id = 'drawing-pdfs' and app_current_role() = 'xa_admin');
 
 drop policy if exists drawing_pdfs_storage_delete on storage.objects;
 create policy drawing_pdfs_storage_delete on storage.objects
   for delete to authenticated
-  using (bucket_id = 'drawing-pdfs' and current_role() = 'xa_admin');
+  using (bucket_id = 'drawing-pdfs' and app_current_role() = 'xa_admin');
 
 -- Anonymous read access, but only for the current PDF of an approved/
 -- completed drawing — matches the Client Transparency Dashboard's
