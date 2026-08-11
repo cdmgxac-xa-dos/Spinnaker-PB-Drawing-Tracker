@@ -144,7 +144,7 @@ begin
 
   perform log_review(
     v_row.id,
-    case when v_old_status = 'revision_required' then 'revision_reassigned' else 'assigned' end,
+    (case when v_old_status = 'revision_required' then 'revision_reassigned' else 'assigned' end)::review_action,
     p_comments
   );
   return v_row;
@@ -418,13 +418,13 @@ begin
   end if;
 
   update drawing_items
-  set status = case when p_decision = 'approve' then 'gpi_review' else 'revision_required' end
+  set status = (case when p_decision = 'approve' then 'gpi_review' else 'revision_required' end)::drawing_status
   where id = p_item_id
   returning * into v_row;
 
   perform log_review(
     v_row.id,
-    case when p_decision = 'approve' then 'daaa_approved' else 'daaa_revision_requested' end,
+    (case when p_decision = 'approve' then 'daaa_approved' else 'daaa_revision_requested' end)::review_action,
     p_comments
   );
   return v_row;
@@ -459,18 +459,18 @@ begin
 
   update drawing_items
   set
-    status = case when p_decision = 'approve' then 'approved' else 'revision_required' end,
+    status = (case when p_decision = 'approve' then 'approved' else 'revision_required' end)::drawing_status,
     approval_date = case when p_decision = 'approve' then current_date else approval_date end
   where id = p_item_id
   returning * into v_row;
 
   perform log_review(
     v_row.id,
-    case p_decision
+    (case p_decision
       when 'approve' then 'gpi_approved'
       when 'reject' then 'gpi_rejected'
       else 'gpi_revision_requested'
-    end,
+    end)::review_action,
     p_comments
   );
   return v_row;
