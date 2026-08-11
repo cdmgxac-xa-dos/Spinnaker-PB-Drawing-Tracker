@@ -22,6 +22,7 @@ const ACTION_LABEL: Record<string, string> = {
   edited: 'Drawing details edited',
   deleted: 'Drawing item deleted',
   remark_added: 'Remark added',
+  status_corrected: 'Status corrected by XA',
 }
 
 const ACTION_COLOR: Record<string, string> = {
@@ -30,6 +31,7 @@ const ACTION_COLOR: Record<string, string> = {
   daaa_revision_requested: 'bg-red-500',
   gpi_revision_requested: 'bg-red-500',
   gpi_rejected: 'bg-red-600',
+  status_corrected: 'bg-amber-500',
   remark_added: 'bg-slate-400',
 }
 

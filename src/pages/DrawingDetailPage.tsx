@@ -18,12 +18,14 @@ import {
   xaDeleteItem,
   xaMarkCompleted,
   xaReturnToDraftsman,
+  xaSetStatus,
   xaSubmitToDaaa,
   xaUpdateItem,
 } from '@/services/drawingService'
 import { uploadPdfAsDraftsman, uploadPdfAsXa } from '@/services/pdfService'
 import { listAllProfiles } from '@/services/authService'
-import type { DrawingItem, Profile, ReviewHistoryEntry } from '@/types'
+import type { DrawingItem, DrawingStatus, Profile, ReviewHistoryEntry } from '@/types'
+import { DRAWING_STATUSES, STATUS_LABELS } from '@/types'
 
 export function DrawingDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -313,6 +315,8 @@ function RoleActions({
           </button>
         )}
 
+        <CorrectStatus item={item} busy={busy} run={run} />
+
         <button
           disabled={busy}
           onClick={() => {
@@ -435,6 +439,85 @@ function RoleActions({
   }
 
   return null
+}
+
+/**
+ * XA-only "undo": directly sets a drawing to any status, for correcting an
+ * accidental click (wrong role clicked an action, wrong drawing, etc). Logged
+ * distinctly in the timeline as a manual correction, not a workflow event —
+ * and kept out of the client/Landco-facing dashboard entirely.
+ */
+function CorrectStatus({
+  item,
+  busy,
+  run,
+}: {
+  item: DrawingItem
+  busy: boolean
+  run: (fn: () => Promise<unknown>) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const [status, setStatus] = useState<DrawingStatus>(item.status)
+  const [comments, setComments] = useState('')
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => {
+          setStatus(item.status)
+          setOpen(true)
+        }}
+        className="w-full rounded-lg border border-dashed border-brand-line px-3 py-2 text-sm font-semibold text-brand-slate hover:border-brand-teal hover:text-brand-teal"
+        disabled={busy}
+      >
+        Correct status (undo an accidental click)
+      </button>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+      <p className="mb-2 text-xs font-semibold text-amber-900">
+        Directly override the status — use this to undo an accidental click. Current: {STATUS_LABELS[item.status]}.
+      </p>
+      <select
+        value={status}
+        onChange={(e) => setStatus(e.target.value as DrawingStatus)}
+        className="mb-2 w-full rounded-lg border border-brand-line px-2 py-1.5 text-sm"
+      >
+        {DRAWING_STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {STATUS_LABELS[s]}
+          </option>
+        ))}
+      </select>
+      <input
+        value={comments}
+        onChange={(e) => setComments(e.target.value)}
+        placeholder="Optional note (e.g. 'accidental click, was Assigned')"
+        className="mb-2 w-full rounded-lg border border-brand-line px-2 py-1.5 text-sm"
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={() => setOpen(false)}
+          className="flex-1 rounded-lg border border-brand-line py-1.5 text-sm font-semibold text-brand-ink"
+        >
+          Cancel
+        </button>
+        <button
+          disabled={busy || status === item.status}
+          onClick={async () => {
+            await run(() => xaSetStatus(item.id, status, comments || undefined))
+            setOpen(false)
+            setComments('')
+          }}
+          className="flex-1 rounded-lg bg-amber-600 py-1.5 text-sm font-semibold text-white disabled:opacity-40"
+        >
+          Correct to {STATUS_LABELS[status]}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function EditModal({

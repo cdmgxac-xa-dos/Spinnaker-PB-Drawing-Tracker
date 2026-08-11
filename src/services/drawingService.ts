@@ -150,6 +150,16 @@ export async function xaDeleteItem(itemId: string) {
   if (error) throw error
 }
 
+/** XA-only "undo"/correction — directly sets a drawing to any status. */
+export async function xaSetStatus(itemId: string, status: DrawingStatus, comments?: string) {
+  const { error } = await requireSupabase().rpc('xa_set_status', {
+    p_item_id: itemId,
+    p_status: status,
+    p_comments: comments ?? null,
+  })
+  if (error) throw error
+}
+
 export async function xaAssignDraftsman(
   itemId: string,
   draftsmanId: string,

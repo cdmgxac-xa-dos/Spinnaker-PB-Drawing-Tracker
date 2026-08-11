@@ -118,6 +118,7 @@ export type ReviewAction =
   | 'edited'
   | 'deleted'
   | 'remark_added'
+  | 'status_corrected'
 
 export interface ReviewHistoryEntry {
   id: string
