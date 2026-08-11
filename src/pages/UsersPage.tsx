@@ -8,6 +8,7 @@ const ROLE_LABEL: Record<AppRole, string> = {
   draftsman: 'Draftsman',
   daaa: 'DAAA',
   gpi: 'GPI',
+  landco: 'Landco (Owner) — view only',
 }
 
 export function UsersPage() {

@@ -38,6 +38,13 @@ Internal Review → Submitted to DAAA → DAAA Review → GPI Review → Approve
 Completed, with Revision Required looping back to a reassigned Draftsman
 (the drawing's `revision_number` increments each time).
 
+A fifth role, **Landco** (the project owner — see `OWNER:` in the source
+Excel), sits outside this matrix entirely: view-only, not part of the
+workflow. RLS blocks Landco from `drawing_items`/`drawing_pdfs`/
+`review_history` directly (`supabase/05_landco_permissions.sql`) — they
+only ever read the same curated `client_dashboard_*` views the public
+dashboard uses, just behind a login instead of a public link.
+
 ## Login
 
 - **XA Admin / Site Engineer** — password-protected. The very first one is
@@ -46,14 +53,15 @@ Completed, with Revision Required looping back to a reassigned Draftsman
   a password change immediately after that first sign-in. Any additional
   XA Admin accounts XA creates from **Users** also start at `000000` with a
   forced change.
-- **Draftsman / DAAA / GPI** — no password. The login screen lists
-  accounts by role; picking a name signs you in directly. Under the hood
-  this still produces a real, RLS-respecting Supabase session — see
+- **Draftsman / DAAA / GPI / Landco** — no password. The login screen
+  lists accounts by role; picking a name signs you in directly. Under the
+  hood this still produces a real, RLS-respecting Supabase session — see
   "Passwordless sign-in" below.
 - **Client Transparency Dashboard** (`/client`) — fully public, no login,
-  read-only. Shows progress, status, dates, approved PDFs and a workflow
-  timeline; never shows drawings that aren't yet Approved/Completed, and
-  never shows internal remarks (only formal submission/review events).
+  read-only, identical data to what Landco sees logged in. Shows progress,
+  status, dates, approved PDFs and a workflow timeline; never shows
+  drawings that aren't yet Approved/Completed, and never shows internal
+  remarks (only formal submission/review events).
 
 ### Passwordless sign-in, and why it needs an Edge Function
 

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ListChecks, ClipboardCheck, Stamp, Users, LogOut, FileText } from 'lucide-react'
+import { LayoutDashboard, ListChecks, ClipboardCheck, Stamp, Users, LogOut, FileText, Eye } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import type { AppRole } from '@/types'
 
@@ -8,6 +8,7 @@ const ROLE_LABEL: Record<AppRole, string> = {
   draftsman: 'Draftsman',
   daaa: 'DAAA — Technical Reviewer',
   gpi: 'GPI — Final Approval',
+  landco: 'Landco (Owner)',
 }
 
 const NAV: Record<AppRole, { to: string; label: string; icon: typeof LayoutDashboard }[]> = {
@@ -19,6 +20,7 @@ const NAV: Record<AppRole, { to: string; label: string; icon: typeof LayoutDashb
   draftsman: [{ to: '/', label: 'My Drawings', icon: ClipboardCheck }],
   daaa: [{ to: '/', label: 'DAAA Review Queue', icon: ClipboardCheck }],
   gpi: [{ to: '/', label: 'GPI Final Review', icon: Stamp }],
+  landco: [{ to: '/', label: 'Progress', icon: Eye }],
 }
 
 export function AppLayout() {

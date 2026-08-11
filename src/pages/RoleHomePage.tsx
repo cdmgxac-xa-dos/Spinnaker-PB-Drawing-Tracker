@@ -3,6 +3,7 @@ import { XADashboardPage } from '@/pages/XADashboardPage'
 import { DraftsmanPage } from '@/pages/DraftsmanPage'
 import { DAAAReviewPage } from '@/pages/DAAAReviewPage'
 import { GPIReviewPage } from '@/pages/GPIReviewPage'
+import { LandcoDashboardPage } from '@/pages/LandcoDashboardPage'
 
 export function RoleHomePage() {
   const { profile } = useAuth()
@@ -17,5 +18,7 @@ export function RoleHomePage() {
       return <DAAAReviewPage />
     case 'gpi':
       return <GPIReviewPage />
+    case 'landco':
+      return <LandcoDashboardPage />
   }
 }

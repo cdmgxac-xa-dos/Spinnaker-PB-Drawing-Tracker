@@ -15,6 +15,7 @@ const ROLE_TABS: { role: AppRole; label: string }[] = [
   { role: 'draftsman', label: 'Draftsman' },
   { role: 'daaa', label: 'DAAA' },
   { role: 'gpi', label: 'GPI' },
+  { role: 'landco', label: 'Landco' },
 ]
 
 type Mode = 'loading' | 'bootstrap' | 'ready'

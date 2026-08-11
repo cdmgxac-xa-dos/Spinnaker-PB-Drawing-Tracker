@@ -20,7 +20,10 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<RoleHomePage />} />
-          <Route path="/drawings/:id" element={<DrawingDetailPage />} />
+
+          <Route element={<ProtectedRoute allow={['xa_admin', 'draftsman', 'daaa', 'gpi']} />}>
+            <Route path="/drawings/:id" element={<DrawingDetailPage />} />
+          </Route>
 
           <Route element={<ProtectedRoute allow={['xa_admin']} />}>
             <Route path="/register" element={<DrawingRegisterPage />} />

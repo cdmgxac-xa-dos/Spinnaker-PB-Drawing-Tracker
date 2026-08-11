@@ -1,10 +1,15 @@
 // ---------------------------------------------------------------------------
 // Domain model for the Client Shop Drawing Transparency Tracker.
-// Mirrors the Supabase schema in supabase/01_schema.sql exactly — keep the
-// two in sync when either changes.
+// Mirrors the Supabase schema in supabase/01_schema.sql (plus the
+// 04_add_landco_role.sql / 05_landco_permissions.sql follow-up migration)
+// exactly — keep the two in sync when either changes.
 // ---------------------------------------------------------------------------
 
-export type AppRole = 'xa_admin' | 'draftsman' | 'daaa' | 'gpi'
+// 'landco' is the project owner (Landco Pacific Corporation) — view-only,
+// not part of the approval workflow. See 05_landco_permissions.sql: they
+// have no direct RLS access to drawing_items/drawing_pdfs/review_history,
+// only to the same curated client_dashboard_* views the public dashboard uses.
+export type AppRole = 'xa_admin' | 'draftsman' | 'daaa' | 'gpi' | 'landco'
 
 export interface Profile {
   id: string
