@@ -61,7 +61,7 @@ export function LoginPage() {
     setError('')
     try {
       await bootstrapFirstAdmin(bootstrapName, bootstrapEmail)
-      await signInWithPassword(bootstrapEmail, '0000')
+      await signInWithPassword(bootstrapEmail, '000000')
       await refreshProfile()
       navigate('/change-password', { replace: true })
     } catch (e) {
@@ -128,7 +128,7 @@ export function LoginPage() {
               </div>
               <p className="mb-4 text-sm text-brand-slate">
                 No account exists yet. Create the XA Admin / Site Engineer account — it starts
-                with the password <span className="font-mono font-semibold">0000</span> and you'll
+                with the password <span className="font-mono font-semibold">000000</span> and you'll
                 be asked to change it immediately.
               </p>
               <form onSubmit={handleBootstrap} className="space-y-3">

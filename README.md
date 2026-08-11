@@ -42,9 +42,9 @@ Completed, with Revision Required looping back to a reassigned Draftsman
 
 - **XA Admin / Site Engineer** — password-protected. The very first one is
   created from the login screen itself (shows "Set up the first Admin
-  account" until one exists) with password **`0000`**, and the app forces
+  account" until one exists) with password **`000000`**, and the app forces
   a password change immediately after that first sign-in. Any additional
-  XA Admin accounts XA creates from **Users** also start at `0000` with a
+  XA Admin accounts XA creates from **Users** also start at `000000` with a
   forced change.
 - **Draftsman / DAAA / GPI** — no password. The login screen lists
   accounts by role; picking a name signs you in directly. Under the hood
@@ -95,7 +95,7 @@ accounts at all, and nothing is ever emailed or shown.
    npm install
    npm run dev
    ```
-6. Open the app, create the first XA Admin account, sign in with `0000`,
+6. Open the app, create the first XA Admin account, sign in with `000000`,
    set a real password, then use **Users** to add draftsmen/DAAA/GPI
    accounts (they need a real email address each — that's what the
    magic-link OTP under the passwordless flow authenticates against, even

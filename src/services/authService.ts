@@ -38,7 +38,7 @@ export async function loginDirectory(): Promise<Pick<Profile, 'id' | 'full_name'
 /** Bootstrap the very first XA Admin / Site Engineer account, password "0000". */
 export async function bootstrapFirstAdmin(fullName: string, email: string) {
   const client = ephemeralClient()
-  const { data, error } = await client.auth.signUp({ email, password: '0000' })
+  const { data, error } = await client.auth.signUp({ email, password: '000000' })
   if (error) throw error
   const userId = data.user?.id
   if (!userId) throw new Error('Sign-up did not return a user')
@@ -56,7 +56,7 @@ export async function bootstrapFirstAdmin(fullName: string, email: string) {
 /** XA Admin creates any other account (xa_admin, draftsman, daaa, gpi). */
 export async function createAccount(fullName: string, email: string, role: AppRole) {
   const client = ephemeralClient()
-  const password = role === 'xa_admin' ? '0000' : randomPassword()
+  const password = role === 'xa_admin' ? '000000' : randomPassword()
   const { data, error } = await client.auth.signUp({ email, password })
   if (error) throw error
   const userId = data.user?.id

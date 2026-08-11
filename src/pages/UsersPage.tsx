@@ -42,7 +42,7 @@ export function UsersPage() {
       await createAccount(fullName.trim(), email.trim(), role)
       setNotice(
         role === 'xa_admin'
-          ? `${fullName} can now sign in with password 0000 (forced change on first login).`
+          ? `${fullName} can now sign in with password 000000 (forced change on first login).`
           : `${fullName} can now sign in from the login screen — no password needed.`
       )
       setFullName('')

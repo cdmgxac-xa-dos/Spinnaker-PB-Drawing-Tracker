@@ -19,7 +19,7 @@ export function ChangePasswordPage() {
       setError('Password must be at least 6 characters.')
       return
     }
-    if (password === '0000') {
+    if (password === '000000') {
       setError('Choose a password other than the default.')
       return
     }
