@@ -13,12 +13,14 @@
 // calls supabase.auth.setSession(...) with them. No password ever exists
 // for these accounts, and none is ever sent over the wire.
 //
+// Deliberately has zero external imports (plain fetch() to the REST/Auth
+// HTTP API instead of @supabase/supabase-js) — this only needs to run
+// through Deno's std runtime, no bundler/import resolution required.
+//
 // Deploy with:
 //   supabase functions deploy passwordless-login
 // (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically by
 // the Supabase platform — no extra secrets to set.)
-
-import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -40,49 +42,63 @@ Deno.serve(async (req) => {
       return json({ error: 'profile_id is required' }, 400)
     }
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
-
-    const { data: profile, error: profileError } = await admin
-      .from('profiles')
-      .select('id, email, role, full_name')
-      .eq('id', profile_id)
-      .single()
-
-    if (profileError || !profile) {
+    const profileRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(profile_id)}&select=id,email,role,full_name`,
+      {
+        headers: {
+          apikey: SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        },
+      }
+    )
+    if (!profileRes.ok) {
+      return json({ error: 'Could not look up account' }, 500)
+    }
+    const profiles = await profileRes.json()
+    const profile = profiles?.[0]
+    if (!profile) {
       return json({ error: 'Account not found' }, 404)
     }
     if (profile.role === 'xa_admin') {
       return json({ error: 'XA Admin / Site Engineer accounts require a password' }, 403)
     }
 
-    const { data: link, error: linkError } = await admin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: profile.email,
+    const linkRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ type: 'magiclink', email: profile.email }),
     })
-    if (linkError || !link) {
-      return json({ error: linkError?.message ?? 'Could not start sign-in' }, 500)
+    const link = await linkRes.json()
+    if (!linkRes.ok) {
+      return json({ error: link?.msg ?? link?.error_description ?? 'Could not start sign-in' }, 500)
     }
-
-    const otp = link.properties?.email_otp
+    const otp = link.email_otp
     if (!otp) {
       return json({ error: 'Could not generate a sign-in token' }, 500)
     }
 
-    // Redeem the OTP server-side with an anon-key client so we get back a
-    // real session (access + refresh token) without ever exposing the OTP.
-    const anon = createClient(SUPABASE_URL, ANON_KEY)
-    const { data: verified, error: verifyError } = await anon.auth.verifyOtp({
-      email: profile.email,
-      token: otp,
-      type: 'magiclink',
+    // Redeem the OTP server-side with the anon key so we get back a real
+    // session (access + refresh token) without ever exposing the OTP.
+    const verifyRes = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+      method: 'POST',
+      headers: {
+        apikey: ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ type: 'magiclink', email: profile.email, token: otp }),
     })
-    if (verifyError || !verified.session) {
-      return json({ error: verifyError?.message ?? 'Sign-in failed' }, 500)
+    const session = await verifyRes.json()
+    if (!verifyRes.ok || !session.access_token) {
+      return json({ error: session?.msg ?? session?.error_description ?? 'Sign-in failed' }, 500)
     }
 
     return json({
-      access_token: verified.session.access_token,
-      refresh_token: verified.session.refresh_token,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
       full_name: profile.full_name,
       role: profile.role,
     })
