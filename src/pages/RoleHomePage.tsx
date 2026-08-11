@@ -1,8 +1,8 @@
 import { useAuth } from '@/context/AuthContext'
 import { XADashboardPage } from '@/pages/XADashboardPage'
-import { DraftsmanPage } from '@/pages/DraftsmanPage'
-import { DAAAReviewPage } from '@/pages/DAAAReviewPage'
-import { GPIReviewPage } from '@/pages/GPIReviewPage'
+import { DraftsmanDashboardPage } from '@/pages/DraftsmanDashboardPage'
+import { DAAADashboardPage } from '@/pages/DAAADashboardPage'
+import { GPIDashboardPage } from '@/pages/GPIDashboardPage'
 import { LandcoDashboardPage } from '@/pages/LandcoDashboardPage'
 
 export function RoleHomePage() {
@@ -13,11 +13,11 @@ export function RoleHomePage() {
     case 'xa_admin':
       return <XADashboardPage />
     case 'draftsman':
-      return <DraftsmanPage />
+      return <DraftsmanDashboardPage />
     case 'daaa':
-      return <DAAAReviewPage />
+      return <DAAADashboardPage />
     case 'gpi':
-      return <GPIReviewPage />
+      return <GPIDashboardPage />
     case 'landco':
       return <LandcoDashboardPage />
   }

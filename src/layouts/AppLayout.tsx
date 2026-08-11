@@ -17,10 +17,24 @@ const NAV: Record<AppRole, { to: string; label: string; icon: typeof LayoutDashb
     { to: '/register', label: 'Drawing Register', icon: ListChecks },
     { to: '/users', label: 'Users', icon: Users },
   ],
-  draftsman: [{ to: '/', label: 'My Drawings', icon: ClipboardCheck }],
-  daaa: [{ to: '/', label: 'DAAA Review Queue', icon: ClipboardCheck }],
-  gpi: [{ to: '/', label: 'GPI Final Review', icon: Stamp }],
-  landco: [{ to: '/', label: 'Progress', icon: Eye }],
+  draftsman: [
+    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/my-drawings', label: 'My Drawings', icon: ClipboardCheck },
+  ],
+  daaa: [
+    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/daaa-queue', label: 'Review Queue', icon: ClipboardCheck },
+    { to: '/progress', label: 'Progress', icon: Eye },
+  ],
+  gpi: [
+    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/gpi-queue', label: 'Final Review', icon: Stamp },
+    { to: '/progress', label: 'Progress', icon: Eye },
+  ],
+  landco: [
+    { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/progress', label: 'Progress', icon: Eye },
+  ],
 }
 
 export function AppLayout() {

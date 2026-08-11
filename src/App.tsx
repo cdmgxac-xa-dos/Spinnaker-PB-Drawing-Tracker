@@ -8,6 +8,10 @@ import { DrawingRegisterPage } from '@/pages/DrawingRegisterPage'
 import { DrawingDetailPage } from '@/pages/DrawingDetailPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { ClientDashboardPage } from '@/pages/ClientDashboardPage'
+import { DraftsmanPage } from '@/pages/DraftsmanPage'
+import { DAAAReviewPage } from '@/pages/DAAAReviewPage'
+import { GPIReviewPage } from '@/pages/GPIReviewPage'
+import { ProgressPage } from '@/pages/ProgressPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 export default function App() {
@@ -23,6 +27,22 @@ export default function App() {
 
           <Route element={<ProtectedRoute allow={['xa_admin', 'draftsman', 'daaa', 'gpi']} />}>
             <Route path="/drawings/:id" element={<DrawingDetailPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allow={['draftsman']} />}>
+            <Route path="/my-drawings" element={<DraftsmanPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allow={['daaa']} />}>
+            <Route path="/daaa-queue" element={<DAAAReviewPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allow={['gpi']} />}>
+            <Route path="/gpi-queue" element={<GPIReviewPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allow={['daaa', 'gpi', 'landco']} />}>
+            <Route path="/progress" element={<ProgressPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allow={['xa_admin']} />}>

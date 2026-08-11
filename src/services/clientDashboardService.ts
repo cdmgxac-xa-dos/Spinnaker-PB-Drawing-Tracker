@@ -1,5 +1,6 @@
 import { requireSupabase } from '@/lib/supabaseClient'
-import type { DrawingStatus } from '@/types'
+import type { DashboardStats, DrawingStatus } from '@/types'
+import { DRAWING_STATUSES } from '@/types'
 
 export interface ClientDrawingRow {
   id: string
@@ -55,6 +56,26 @@ export async function fetchClientTimeline(): Promise<ClientTimelineRow[]> {
     .limit(100)
   if (error) throw error
   return data as ClientTimelineRow[]
+}
+
+export function computeClientStats(rows: ClientDrawingRow[]): DashboardStats {
+  const byStatus = Object.fromEntries(DRAWING_STATUSES.map((s) => [s, 0])) as Record<DrawingStatus, number>
+  let overdue = 0
+  const today = new Date().toISOString().slice(0, 10)
+  for (const row of rows) {
+    byStatus[row.status]++
+    if (row.target_submission_date && row.target_submission_date < today && !['approved', 'completed'].includes(row.status)) {
+      overdue++
+    }
+  }
+  return {
+    total: rows.length,
+    completed: byStatus.completed,
+    approved: byStatus.approved,
+    revisionRequired: byStatus.revision_required,
+    overdue,
+    byStatus,
+  }
 }
 
 export async function getPublicSignedUrl(storagePath: string): Promise<string> {
