@@ -27,10 +27,15 @@ $$;
 -- XA — drawing item management
 -- ---------------------------------------------------------------------------
 
+-- Adding p_batch changes the argument list, so CREATE OR REPLACE alone would
+-- leave the old 9-arg overload orphaned in the database — drop it explicitly.
+drop function if exists xa_create_drawing_item(text, text, text, text, text, text, numeric, text, date);
+
 create or replace function xa_create_drawing_item(
   p_item_no text,
   p_description text,
   p_category text default null,
+  p_batch text default null,
   p_sheet_no text default null,
   p_reference text default null,
   p_unit text default null,
@@ -46,8 +51,8 @@ begin
     raise exception 'Only XA can create drawing items' using errcode = '42501';
   end if;
 
-  insert into drawing_items (item_no, description, category, sheet_no, reference, unit, qty, plan_reference, target_submission_date)
-  values (p_item_no, p_description, p_category, p_sheet_no, p_reference, p_unit, p_qty, p_plan_reference, p_target_submission_date)
+  insert into drawing_items (item_no, description, category, batch, sheet_no, reference, unit, qty, plan_reference, target_submission_date)
+  values (p_item_no, p_description, p_category, p_batch, p_sheet_no, p_reference, p_unit, p_qty, p_plan_reference, p_target_submission_date)
   returning * into v_row;
 
   perform log_review(v_row.id, 'created');
@@ -55,10 +60,13 @@ begin
 end;
 $$;
 
+drop function if exists xa_update_drawing_item(uuid, text, text, text, text, text, numeric, text, date, text);
+
 create or replace function xa_update_drawing_item(
   p_item_id uuid,
   p_description text default null,
   p_category text default null,
+  p_batch text default null,
   p_sheet_no text default null,
   p_reference text default null,
   p_unit text default null,
@@ -78,6 +86,7 @@ begin
   update drawing_items set
     description = coalesce(p_description, description),
     category = coalesce(p_category, category),
+    batch = coalesce(p_batch, batch),
     sheet_no = coalesce(p_sheet_no, sheet_no),
     reference = coalesce(p_reference, reference),
     unit = coalesce(p_unit, unit),
@@ -493,11 +502,12 @@ begin
   end if;
 
   for v_item in select * from jsonb_array_elements(p_items) loop
-    insert into drawing_items (item_no, description, category, sheet_no, reference, unit, qty, plan_reference)
+    insert into drawing_items (item_no, description, category, batch, sheet_no, reference, unit, qty, plan_reference)
     values (
       v_item->>'item_no',
       v_item->>'description',
       v_item->>'category',
+      v_item->>'batch',
       v_item->>'sheet_no',
       v_item->>'reference',
       v_item->>'unit',
@@ -507,6 +517,7 @@ begin
     on conflict (item_no) do update set
       description = excluded.description,
       category = excluded.category,
+      batch = excluded.batch,
       sheet_no = excluded.sheet_no,
       reference = excluded.reference,
       unit = excluded.unit,

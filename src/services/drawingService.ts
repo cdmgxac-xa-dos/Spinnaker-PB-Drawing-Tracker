@@ -91,6 +91,7 @@ export async function xaCreateItem(payload: {
   item_no: string
   description: string
   category?: string
+  batch?: string
   sheet_no?: string
   reference?: string
   unit?: string
@@ -102,6 +103,7 @@ export async function xaCreateItem(payload: {
     p_item_no: payload.item_no,
     p_description: payload.description,
     p_category: payload.category ?? null,
+    p_batch: payload.batch ?? null,
     p_sheet_no: payload.sheet_no ?? null,
     p_reference: payload.reference ?? null,
     p_unit: payload.unit ?? null,
@@ -117,6 +119,7 @@ export async function xaUpdateItem(
   payload: Partial<{
     description: string
     category: string
+    batch: string
     sheet_no: string
     reference: string
     unit: string
@@ -130,6 +133,7 @@ export async function xaUpdateItem(
     p_item_id: itemId,
     p_description: payload.description ?? null,
     p_category: payload.category ?? null,
+    p_batch: payload.batch ?? null,
     p_sheet_no: payload.sheet_no ?? null,
     p_reference: payload.reference ?? null,
     p_unit: payload.unit ?? null,

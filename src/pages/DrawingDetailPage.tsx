@@ -96,7 +96,9 @@ export function DrawingDetailPage() {
       <div className="mb-4 rounded-2xl border border-brand-line bg-white p-5 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-teal">Item {item.item_no}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-teal">
+              {item.batch ? `${item.batch} · ` : ''}Item {item.item_no}
+            </p>
             <h1 className="text-lg font-bold text-brand-ink">{item.description}</h1>
             {item.category && <p className="text-sm text-brand-slate">{item.category}</p>}
           </div>
@@ -446,6 +448,7 @@ function EditModal({
 }) {
   const [description, setDescription] = useState(item.description)
   const [category, setCategory] = useState(item.category ?? '')
+  const [batch, setBatch] = useState(item.batch ?? '')
   const [sheetNo, setSheetNo] = useState(item.sheet_no ?? '')
   const [reference, setReference] = useState(item.reference ?? '')
   const [unit, setUnit] = useState(item.unit ?? '')
@@ -460,6 +463,7 @@ function EditModal({
       await onSave({
         description,
         category,
+        batch,
         sheet_no: sheetNo,
         reference,
         unit,
@@ -478,6 +482,7 @@ function EditModal({
         <h2 className="mb-4 text-base font-bold text-brand-ink">Edit {item.item_no}</h2>
         <div className="space-y-3">
           <LabeledInput label="Description" value={description} onChange={setDescription} />
+          <LabeledInput label="Batch" value={batch} onChange={setBatch} />
           <LabeledInput label="Category" value={category} onChange={setCategory} />
           <LabeledInput label="Sheet No." value={sheetNo} onChange={setSheetNo} />
           <div>

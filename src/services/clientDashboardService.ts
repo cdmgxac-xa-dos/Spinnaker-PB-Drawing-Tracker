@@ -6,6 +6,7 @@ export interface ClientDrawingRow {
   item_no: string
   description: string
   category: string | null
+  batch: string | null
   unit: string | null
   qty: number | null
   target_submission_date: string | null

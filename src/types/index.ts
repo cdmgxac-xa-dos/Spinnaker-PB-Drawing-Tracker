@@ -63,6 +63,7 @@ export interface DrawingItem {
   item_no: string
   description: string
   category: string | null
+  batch: string | null
   sheet_no: string | null
   reference: string | null
   unit: string | null

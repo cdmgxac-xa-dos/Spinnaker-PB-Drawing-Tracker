@@ -58,6 +58,7 @@ export function DrawingRegisterPage() {
           item_no: String(r['item_no'] ?? r['ITEM NO.'] ?? r['Item No'] ?? '').trim(),
           description: String(r['description'] ?? r['DESCRIPTION'] ?? r['Description'] ?? '').trim(),
           category: r['category'] ?? r['CATEGORY'] ?? r['Category'] ?? null,
+          batch: r['batch'] ?? r['BATCH'] ?? r['Batch'] ?? null,
           sheet_no: r['sheet_no'] ?? r['SHEET NO.'] ?? null,
           reference: r['reference'] ?? r['REFERENCE'] ?? null,
           unit: r['unit'] ?? r['UNIT'] ?? null,
@@ -153,6 +154,7 @@ function AddItemModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [itemNo, setItemNo] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
+  const [batch, setBatch] = useState('BATCH 1')
   const [unit, setUnit] = useState('assy')
   const [qty, setQty] = useState('1')
   const [saving, setSaving] = useState(false)
@@ -166,7 +168,14 @@ function AddItemModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     }
     setSaving(true)
     try {
-      await xaCreateItem({ item_no: itemNo.trim(), description: description.trim(), category, unit, qty: Number(qty) })
+      await xaCreateItem({
+        item_no: itemNo.trim(),
+        description: description.trim(),
+        category,
+        batch,
+        unit,
+        qty: Number(qty),
+      })
       await onCreated()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create item')
@@ -182,6 +191,7 @@ function AddItemModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         <div className="space-y-3">
           <Field label="Item No." value={itemNo} onChange={setItemNo} />
           <Field label="Description" value={description} onChange={setDescription} />
+          <Field label="Batch" value={batch} onChange={setBatch} />
           <Field label="Category" value={category} onChange={setCategory} />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Unit" value={unit} onChange={setUnit} />

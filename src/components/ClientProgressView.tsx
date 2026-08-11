@@ -96,13 +96,19 @@ export function ClientProgressView() {
     )
   }
 
-  const groups: { category: string; rows: ClientDrawingRow[] }[] = []
+  const batches: { batch: string; categories: { category: string; rows: ClientDrawingRow[] }[] }[] = []
   for (const item of filtered) {
+    const batchLabel = item.batch || 'Unassigned Batch'
+    let batchGroup = batches.find((b) => b.batch === batchLabel)
+    if (!batchGroup) {
+      batchGroup = { batch: batchLabel, categories: [] }
+      batches.push(batchGroup)
+    }
     const cat = item.category || 'Uncategorized'
-    let g = groups.find((x) => x.category === cat)
+    let g = batchGroup.categories.find((x) => x.category === cat)
     if (!g) {
       g = { category: cat, rows: [] }
-      groups.push(g)
+      batchGroup.categories.push(g)
     }
     g.rows.push(item)
   }
@@ -140,45 +146,54 @@ export function ClientProgressView() {
         </select>
       </div>
 
-      <div className="space-y-6">
-        {groups.map((group) => (
-          <div key={group.category}>
-            <h3 className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-brand-teal">
-              {group.category}
-            </h3>
-            <div className="overflow-hidden rounded-xl border border-brand-line bg-white shadow-card">
-              {group.rows.map((d, idx) => {
-                const pdf = pdfByItem.get(d.id)
-                return (
-                  <div
-                    key={d.id}
-                    className={`flex flex-wrap items-center gap-3 px-4 py-3 ${
-                      idx !== group.rows.length - 1 ? 'border-b border-brand-line' : ''
-                    }`}
-                  >
-                    <span className="w-14 shrink-0 font-mono text-xs font-semibold text-brand-slate">
-                      {d.item_no}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-brand-ink">{d.description}</p>
-                      <p className="truncate text-xs text-brand-slate">
-                        {d.target_submission_date ? `Target: ${d.target_submission_date}` : ''}
-                        {d.submission_date ? ` · Submitted: ${d.submission_date}` : ''}
-                        {d.approval_date ? ` · Approved: ${d.approval_date}` : ''}
-                      </p>
-                    </div>
-                    <StatusBadge status={d.status} className="shrink-0" />
-                    {pdf && (
-                      <button
-                        onClick={() => openPdf(pdf.storage_path)}
-                        className="flex shrink-0 items-center gap-1 rounded-lg border border-brand-teal px-2.5 py-1 text-xs font-semibold text-brand-teal hover:bg-brand-tint"
-                      >
-                        <ExternalLink size={12} /> Approved PDF
-                      </button>
-                    )}
+      <div className="space-y-8">
+        {batches.map((batchGroup) => (
+          <div key={batchGroup.batch}>
+            <h2 className="mb-3 px-1 text-sm font-extrabold uppercase tracking-wide text-brand-ink">
+              {batchGroup.batch}
+            </h2>
+            <div className="space-y-6">
+              {batchGroup.categories.map((group) => (
+                <div key={group.category}>
+                  <h3 className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-brand-teal">
+                    {group.category}
+                  </h3>
+                  <div className="overflow-hidden rounded-xl border border-brand-line bg-white shadow-card">
+                    {group.rows.map((d, idx) => {
+                      const pdf = pdfByItem.get(d.id)
+                      return (
+                        <div
+                          key={d.id}
+                          className={`flex flex-wrap items-center gap-3 px-4 py-3 ${
+                            idx !== group.rows.length - 1 ? 'border-b border-brand-line' : ''
+                          }`}
+                        >
+                          <span className="w-14 shrink-0 font-mono text-xs font-semibold text-brand-slate">
+                            {d.item_no}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-brand-ink">{d.description}</p>
+                            <p className="truncate text-xs text-brand-slate">
+                              {d.target_submission_date ? `Target: ${d.target_submission_date}` : ''}
+                              {d.submission_date ? ` · Submitted: ${d.submission_date}` : ''}
+                              {d.approval_date ? ` · Approved: ${d.approval_date}` : ''}
+                            </p>
+                          </div>
+                          <StatusBadge status={d.status} className="shrink-0" />
+                          {pdf && (
+                            <button
+                              onClick={() => openPdf(pdf.storage_path)}
+                              className="flex shrink-0 items-center gap-1 rounded-lg border border-brand-teal px-2.5 py-1 text-xs font-semibold text-brand-teal hover:bg-brand-tint"
+                            >
+                              <ExternalLink size={12} /> Approved PDF
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           </div>
         ))}

@@ -88,7 +88,13 @@ accounts at all, and nothing is ever emailed or shown.
 3. **Run the SQL**, in order, in the Supabase SQL Editor:
    - `supabase/01_schema.sql` — tables, enums, RLS, storage bucket + policies, public views
    - `supabase/02_functions.sql` — all workflow RPCs
-   - `supabase/03_seed_register.sql` — preloads the 124 register items (see below)
+   - `supabase/04_add_landco_role.sql` — adds the Landco (owner) role (must run alone, see the file header)
+   - `supabase/05_landco_permissions.sql` — locks Landco to read-only curated views
+   - `supabase/06_add_batch_column.sql` — adds the batch grouping level (e.g. "BATCH 1")
+   - `supabase/07_batch1_register.sql` — preloads the register (see below)
+   - `supabase/03_seed_register.sql` is **historical/superseded** — it seeded
+     124 items from the ORIG sheet, which turned out not to match what's
+     actually being tracked. Skip it on a fresh install; 07 is the current source.
 4. **Deploy the Edge Function**:
    ```bash
    supabase login
@@ -111,30 +117,48 @@ accounts at all, and nothing is ever emailed or shown.
 
 ## The preloaded register
 
-`supabase/03_seed_register.sql` preloads **124 items** from the client's
-Excel file (`ORIG` sheet — "BILL OF MATERIALS", Project: *The Spinnaker at
-Club Laiya*, CP19 — Supply and Delivery of Panel Boards and Breakers, Meter
-Center, kWh Meter & Switch Gear), sorted by item number, each with its
-category carried along (shown under the description in the Register and
-Client Dashboard — e.g. item `6.5` "PPSA (STUDIO UNIT)" under **Residential
-Panelboards & Circuit Breakers**).
+`supabase/07_batch1_register.sql` preloads **45 items**, pulled from the
+client Excel's **"Batch 1" tab only** (project: *The Spinnaker at Club
+Laiya*, CP19 — Supply and Delivery of Panel Boards and Breakers, Meter
+Center, kWh Meter & Switch Gear) — no other tab. Each item carries two
+grouping levels, both shown in the Register and Client Dashboard:
 
-Two judgment calls made while parsing the sheet, in case anyone reconciles
-against the original file:
-- Items **1.0–4.0** (switchgear/MCBs) and **5.0** (kWh meters) sit above the
-  sheet's first named category row, so they were grouped as "Main
-  Switchgear & Feeder Breakers" and "Metering" respectively. Item 5.0's
-  four amp-rating variants (100A/70A/60A/50A), which share one item number
-  in the source with no sub-numbering, were split into `5.0`, `5.0-v2`,
-  `5.0-v3`, `5.0-v4` so each keeps its own quantity.
-- The source spreadsheet has three item numbers that Excel stored as
-  numbers and silently truncated (`6.10`→`6.1`, `7.10`→`7.1`, `11.10`→`11.1`,
-  each colliding with an already-used number). These were corrected back to
-  `.10` based on sheet position so every item number is unique and sortable.
+- **Batch** — `"BATCH 1"` for every item here (the delivery/procurement
+  batch this equipment belongs to; a future Batch 2 import would use its
+  own batch label and appear as a separate top-level section).
+- **Category** — the finer equipment-type grouping from the tab itself:
+  Main Switchgear & Feeder Breakers, Admin Panelboards & Circuit Breakers,
+  Busbar Gutter, Circuit Breaker Gutter, Enclosed Circuit Breaker (ECB),
+  Residential Panelboards & Circuit Breakers.
 
-Once seeded, XA can re-import at any time from **Drawing Register → Import
-Excel** (expects columns `item_no`, `description`, `category`, `sheet_no`,
-`reference`, `unit`, `qty`) — it upserts by `item_no`.
+An earlier version of this register was seeded from the `ORIG` sheet
+(124 items) instead — that didn't match what's actually being tracked, so
+it was replaced outright (`03_seed_register.sql` is kept for history only).
+Switching sources meant `delete from drawing_items` before the Batch 1
+insert, which cascades to `drawing_pdfs`/`review_history` — any
+assignments/uploads against the old register were cleared as part of
+this fix, confirmed intentional.
+
+`supabase/batch1_items_v2.json` is the exact parsed data behind the seed,
+kept for reconciliation. Two judgment calls made while parsing, in case
+anyone checks against the original file:
+- Items **1.0–4.0** and **9.0** sit above the tab's first named category
+  row, so they're grouped under "Main Switchgear & Feeder Breakers".
+  Items **6.0** and **7.0** are each a single-item "category" in the
+  source (the group header row and the one item under it are the same
+  row pair) — the header text became the category ("Busbar Gutter…" /
+  "Circuit Breaker Gutter…") and the item's own name ("MCG") became the
+  description.
+- The source spreadsheet has two item numbers Excel stored as numbers and
+  silently truncated (`8.10`→`8.1`, `10.10`→`10.1`, each colliding with an
+  already-used number) — corrected back to `.10` based on sheet position.
+- The sheet's own footer says "TOTAL QUANTITY = 146"; the 45 line items
+  actually sum to 147. Left as counted (not adjusted) per request — worth
+  reconciling against the source file directly.
+
+XA can re-import at any time from **Drawing Register → Import Excel**
+(expects columns `item_no`, `description`, `category`, `batch`,
+`sheet_no`, `reference`, `unit`, `qty`) — it upserts by `item_no`.
 
 ## Project structure
 
@@ -149,7 +173,10 @@ src/
   services/     authService, drawingService, pdfService, clientDashboardService
   types/        Domain model — mirrors the SQL schema exactly
 supabase/
-  01_schema.sql, 02_functions.sql, 03_seed_register.sql
+  01_schema.sql, 02_functions.sql — core schema + RPCs
+  03_seed_register.sql — historical/superseded (ORIG-sheet seed)
+  04_add_landco_role.sql, 05_landco_permissions.sql — Landco (owner) role
+  06_add_batch_column.sql, 07_batch1_register.sql — current register (Batch 1)
   functions/passwordless-login/index.ts
 ```
 
