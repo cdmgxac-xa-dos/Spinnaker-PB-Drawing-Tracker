@@ -53,12 +53,21 @@ dashboard uses, just behind a login instead of a public link.
   a password change immediately after that first sign-in. Any additional
   XA Admin accounts XA creates from **Users** also start at `000000` with a
   forced change.
-- **Draftsman / DAAA / GPI / Landco** — no password, but a real magic-link
-  email that has to actually be opened. The login screen lists accounts by
+- **Draftsman / DAAA / GPI** — no password, but a real magic-link email
+  that has to actually be opened. The login screen lists accounts by
   role; picking a name sends a sign-in link to that account's real email
   and shows "Check your email" — the session only starts once they open
   their inbox and click it. See "Passwordless sign-in" below for why this
   matters and how it works.
+- **Landco** — no password, instant login. Click the name, you're in —
+  same as the old flow for every role, kept for Landco specifically
+  because they're read-only viewers (nothing they do is attributed or
+  audited) seeing the same data that's already public at `/client` with
+  no login at all. Real-email verification added no actual security for
+  this role, only friction — and broke outright for a `landco.ph`
+  account whose corporate email security scanner auto-clicked and burned
+  the one-time link before the real person opened it. See "Passwordless
+  sign-in" below.
 - **Client Transparency Dashboard** (`/client`) — fully public, no login,
   read-only, identical data to what Landco sees logged in. Shows progress,
   status, dates, approved PDFs and a workflow timeline; never shows
@@ -71,32 +80,41 @@ The first version of this just let anyone with the login link click any
 name in any role tab and be signed in instantly — no proof the browser
 belonged to that person at all. Since every approval/status change in this
 app is attributed to whoever's logged in, that's a real accountability gap
-(anyone with the URL could act as Chris the draftsman, or Ronald from
-DAAA, just by clicking their name). Fixed by requiring a real magic-link
-email, same as Supabase's standard passwordless flow, but triggered
-through an Edge Function so the account's email address is never exposed
-to the browser (the pre-login directory only ever shows name + role):
+for Draftsman/DAAA/GPI (anyone with the URL could act as Chris the
+draftsman, or Ronald from DAAA, just by clicking their name). Fixed by
+requiring a real magic-link email for those three roles, same as
+Supabase's standard passwordless flow, but triggered through an Edge
+Function so the account's email address is never exposed to the browser
+(the pre-login directory only ever shows name + role). Landco went
+through the same real-email flow briefly, then back to instant login —
+see the Login section above for why that's the right call for a
+read-only role, not a security regression.
 
-1. Login screen calls the `passwordless-login` Edge Function with the
-   chosen account's id.
-2. The function looks up that account's real email server-side (service
-   role) and calls Supabase's own `/auth/v1/otp` endpoint (the same thing
-   `supabase.auth.signInWithOtp()` does), which sends a real magic-link
-   email using Supabase's built-in mailer.
-3. The browser gets back only `{ sent: true }` — no token, no email
-   address.
-4. The person opens their inbox and clicks the link, lands back on the
-   site, and supabase-js's `detectSessionInUrl` picks up the session
-   automatically — no dedicated callback route needed.
+The `passwordless-login` Edge Function branches on role:
 
-XA Admin accounts are untouched by this — they still sign in with a real
-password, per the spec.
+- **Draftsman / DAAA / GPI**: looks up the account's real email
+  server-side (service role) and calls Supabase's own `/auth/v1/otp`
+  endpoint (the same thing `supabase.auth.signInWithOtp()` does), which
+  sends a real magic-link email using Supabase's built-in mailer. The
+  browser gets back only `{ sent: true }` — no token, no email address.
+  The person opens their inbox and clicks the link, lands back on the
+  site, and supabase-js's `detectSessionInUrl` picks up the session
+  automatically — no dedicated callback route needed.
+- **Landco**: generates a magic-link OTP and redeems it immediately
+  server-side (same service-role + anon-key calls, just without waiting
+  for an actual email click), returning a real access/refresh token pair
+  directly to the browser, which installs it with
+  `supabase.auth.setSession()`.
 
-**Requires real, checked email addresses** for every Draftsman/DAAA/GPI/
-Landco account (this project's accounts already use real addresses). Also
-requires the app's deployed URL to be in the Supabase project's Auth → URL
-Configuration → **Redirect URLs** allow-list (and set as the **Site URL**)
-— otherwise the magic link redirects to the wrong place.
+XA Admin accounts are untouched by either path — they still sign in with
+a real password, per the spec.
+
+**Requires real, checked email addresses** for every Draftsman/DAAA/GPI
+account (Landco's email just needs to exist as an account identifier —
+nothing is ever sent to it). Also requires the app's deployed URL to be
+in the Supabase project's Auth → URL Configuration → **Redirect URLs**
+allow-list (and set as the **Site URL**) — otherwise the magic link
+redirects to the wrong place.
 
 ## Setup
 

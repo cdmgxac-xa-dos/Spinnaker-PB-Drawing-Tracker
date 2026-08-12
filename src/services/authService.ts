@@ -77,17 +77,30 @@ export async function signInWithPassword(email: string, password: string) {
   if (error) throw error
 }
 
+export type PasswordlessSignInResult =
+  | { mode: 'instant'; full_name: string }
+  | { mode: 'sent'; full_name: string }
+
 /**
- * Draftsman / DAAA / GPI / Landco sign-in: no password to type, but a real
- * magic-link email that must actually be opened — this is what stops
- * anyone with the login link from just clicking someone else's name.
- * The Edge Function looks up the account's real email server-side (never
- * sent to this browser) and triggers Supabase's own magic-link email.
- * There's no token to install here; the session only gets created once the
- * person clicks the link in their inbox and lands back on the site, which
- * supabase-js picks up automatically (detectSessionInUrl).
+ * Draftsman / DAAA / GPI / Landco sign-in — no password to type, but the
+ * two roles differ:
+ *
+ * - Draftsman / DAAA / GPI: a real magic-link email that must actually be
+ *   opened, so the login link alone can't be used to act as someone else
+ *   (their actions are attributed and audited). Returns `{ mode: 'sent' }`
+ *   — no token, the session only starts once they click the emailed link.
+ * - Landco: instant login. They're read-only viewers with nothing
+ *   attributed to them, and the same data is already public at /client
+ *   with no login at all, so real-email verification added no actual
+ *   security here — only friction (and broke entirely for at least one
+ *   corporate email whose security scanner auto-clicks and burns the
+ *   one-time link before the real person opens it). Returns
+ *   `{ mode: 'instant' }` after installing the session directly.
+ *
+ * Either way the account's real email is looked up server-side by the
+ * Edge Function and never sent to this browser.
  */
-export async function requestMagicLink(profileId: string): Promise<{ full_name: string }> {
+export async function passwordlessSignIn(profileId: string): Promise<PasswordlessSignInResult> {
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/passwordless-login`
   const res = await fetch(url, {
     method: 'POST',
@@ -98,8 +111,18 @@ export async function requestMagicLink(profileId: string): Promise<{ full_name: 
     body: JSON.stringify({ profile_id: profileId }),
   })
   const body = await res.json()
-  if (!res.ok) throw new Error(body.error ?? 'Could not send sign-in email')
-  return { full_name: body.full_name }
+  if (!res.ok) throw new Error(body.error ?? 'Sign-in failed')
+
+  if (body.access_token) {
+    const { error } = await requireSupabase().auth.setSession({
+      access_token: body.access_token,
+      refresh_token: body.refresh_token,
+    })
+    if (error) throw error
+    return { mode: 'instant', full_name: body.full_name }
+  }
+
+  return { mode: 'sent', full_name: body.full_name }
 }
 
 export async function changePassword(newPassword: string) {

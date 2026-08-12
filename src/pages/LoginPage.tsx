@@ -5,7 +5,7 @@ import {
   adminExists,
   bootstrapFirstAdmin,
   loginDirectory,
-  requestMagicLink,
+  passwordlessSignIn,
   signInWithPassword,
 } from '@/services/authService'
 import { useAuth } from '@/context/AuthContext'
@@ -88,14 +88,19 @@ export function LoginPage() {
     }
   }
 
-  async function handleRequestMagicLink(profileId: string) {
+  async function handlePasswordlessLogin(profileId: string) {
     setBusy(true)
     setError('')
     try {
-      const { full_name } = await requestMagicLink(profileId)
-      setSentTo(full_name)
+      const result = await passwordlessSignIn(profileId)
+      if (result.mode === 'instant') {
+        await refreshProfile()
+        navigate('/', { replace: true })
+      } else {
+        setSentTo(result.full_name)
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not send sign-in email')
+      setError(e instanceof Error ? e.message : 'Sign-in failed')
     } finally {
       setBusy(false)
     }
@@ -194,8 +199,9 @@ export function LoginPage() {
                 <div>
                   <div className="mb-3 flex items-center gap-2 text-sm text-brand-slate">
                     <Users size={15} />
-                    No password needed — select your name, then check your email for a sign-in
-                    link.
+                    {tab === 'landco'
+                      ? 'No password needed — select your name to continue.'
+                      : 'No password needed — select your name, then check your email for a sign-in link.'}
                   </div>
                   <div className="max-h-72 space-y-1.5 overflow-y-auto">
                     {directory.filter((d) => d.role === tab).length === 0 && (
@@ -209,7 +215,7 @@ export function LoginPage() {
                         <button
                           key={d.id}
                           disabled={busy}
-                          onClick={() => handleRequestMagicLink(d.id)}
+                          onClick={() => handlePasswordlessLogin(d.id)}
                           className="flex w-full items-center justify-between rounded-lg border border-brand-line px-3 py-2.5 text-left text-sm font-medium text-brand-ink transition-colors hover:border-brand-teal hover:bg-brand-tint disabled:opacity-50"
                         >
                           {d.full_name}

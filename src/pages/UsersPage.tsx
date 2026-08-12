@@ -44,7 +44,9 @@ export function UsersPage() {
       setNotice(
         role === 'xa_admin'
           ? `${fullName} can now sign in with password 000000 (forced change on first login).`
-          : `${fullName} can now sign in from the login screen — no password, just a sign-in link sent to ${email}.`
+          : role === 'landco'
+            ? `${fullName} can now sign in from the login screen — no password, click their name to go straight in.`
+            : `${fullName} can now sign in from the login screen — no password, just a sign-in link sent to ${email}.`
       )
       setFullName('')
       setEmail('')
