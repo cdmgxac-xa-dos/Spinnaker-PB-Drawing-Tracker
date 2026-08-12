@@ -1,19 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as XLSX from 'xlsx'
-import { Loader2, Search, Plus, FileUp } from 'lucide-react'
+import { Loader2, Search, Plus, FileUp, X, Users } from 'lucide-react'
 import { DrawingListTable } from '@/components/DrawingListTable'
-import { listDrawingItems, xaBulkImport, xaCreateItem } from '@/services/drawingService'
-import type { DrawingItem, DrawingStatus } from '@/types'
+import { listDrawingItems, xaBulkAssignDraftsman, xaBulkImport, xaCreateItem } from '@/services/drawingService'
+import { listAllProfiles } from '@/services/authService'
+import type { DrawingItem, DrawingStatus, Profile } from '@/types'
 import { DRAWING_STATUSES, STATUS_LABELS } from '@/types'
 
 export function DrawingRegisterPage() {
   const [items, setItems] = useState<DrawingItem[]>([])
+  const [draftsmen, setDraftsmen] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<DrawingStatus | 'all'>('all')
   const [showAdd, setShowAdd] = useState(false)
   const [importBusy, setImportBusy] = useState(false)
   const [importMsg, setImportMsg] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showBulkAssign, setShowBulkAssign] = useState(false)
 
   async function refresh() {
     setLoading(true)
@@ -26,6 +30,7 @@ export function DrawingRegisterPage() {
 
   useEffect(() => {
     refresh()
+    listAllProfiles().then((all) => setDraftsmen(all.filter((p) => p.role === 'draftsman')))
   }, [])
 
   const filtered = useMemo(() => {
@@ -40,6 +45,15 @@ export function DrawingRegisterPage() {
       )
     })
   }, [items, query, statusFilter])
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -82,7 +96,7 @@ export function DrawingRegisterPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-brand-ink">Drawing Register</h1>
@@ -134,7 +148,29 @@ export function DrawingRegisterPage() {
           <Loader2 className="animate-spin text-brand-slate" />
         </div>
       ) : (
-        <DrawingListTable items={filtered} />
+        <DrawingListTable items={filtered} selectable selectedIds={selectedIds} onToggleSelect={toggleSelect} />
+      )}
+
+      {selectedIds.size > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-brand-line bg-white px-4 py-3 shadow-pop">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-brand-ink">{selectedIds.size} item(s) selected</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="flex items-center gap-1 rounded-lg border border-brand-line px-3 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50"
+              >
+                <X size={14} /> Clear
+              </button>
+              <button
+                onClick={() => setShowBulkAssign(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-brand-ink px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
+              >
+                <Users size={14} /> Assign draftsman…
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showAdd && (
@@ -146,6 +182,106 @@ export function DrawingRegisterPage() {
           }}
         />
       )}
+
+      {showBulkAssign && (
+        <BulkAssignModal
+          count={selectedIds.size}
+          draftsmen={draftsmen}
+          onClose={() => setShowBulkAssign(false)}
+          onAssign={async (draftsmanId, targetDate) => {
+            const assigned = await xaBulkAssignDraftsman(Array.from(selectedIds), draftsmanId, targetDate || undefined)
+            setImportMsg(`Assigned ${assigned} item(s).`)
+            setSelectedIds(new Set())
+            setShowBulkAssign(false)
+            await refresh()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function BulkAssignModal({
+  count,
+  draftsmen,
+  onClose,
+  onAssign,
+}: {
+  count: number
+  draftsmen: Profile[]
+  onClose: () => void
+  onAssign: (draftsmanId: string, targetDate: string) => Promise<void>
+}) {
+  const [draftsmanId, setDraftsmanId] = useState('')
+  const [targetDate, setTargetDate] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function save() {
+    setError('')
+    if (!draftsmanId) {
+      setError('Pick a draftsman.')
+      return
+    }
+    setSaving(true)
+    try {
+      await onAssign(draftsmanId, targetDate)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to assign')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-pop">
+        <h2 className="mb-1 text-base font-bold text-brand-ink">Batch assign draftsman</h2>
+        <p className="mb-4 text-sm text-brand-slate">
+          Applies to all {count} selected item{count > 1 ? 's' : ''}. Items currently in Revision
+          Required get their revision number bumped, same as a single reassignment.
+        </p>
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-brand-slate">Draftsman</span>
+            <select
+              value={draftsmanId}
+              onChange={(e) => setDraftsmanId(e.target.value)}
+              className="w-full rounded-lg border border-brand-line px-3 py-2 text-sm"
+            >
+              <option value="">Select draftsman…</option>
+              {draftsmen.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.full_name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-brand-slate">Target submission date</span>
+            <input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              className="w-full rounded-lg border border-brand-line px-3 py-2 text-sm"
+            />
+          </label>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg border border-brand-line px-4 py-2 text-sm font-semibold">
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={saving || !draftsmanId}
+            className="flex items-center gap-1.5 rounded-lg bg-brand-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {saving && <Loader2 size={14} className="animate-spin" />}
+            Assign {count} item{count > 1 ? 's' : ''}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

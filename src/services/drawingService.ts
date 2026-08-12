@@ -175,6 +175,23 @@ export async function xaAssignDraftsman(
   if (error) throw error
 }
 
+/** Batch-assign a draftsman + target date across many items in one action. */
+export async function xaBulkAssignDraftsman(
+  itemIds: string[],
+  draftsmanId: string,
+  targetDate?: string,
+  comments?: string
+): Promise<number> {
+  const { data, error } = await requireSupabase().rpc('xa_bulk_assign_draftsman', {
+    p_item_ids: itemIds,
+    p_draftsman_id: draftsmanId,
+    p_target_date: targetDate ?? null,
+    p_comments: comments ?? null,
+  })
+  if (error) throw error
+  return data as number
+}
+
 export async function xaSubmitToDaaa(itemId: string, comments?: string) {
   const { error } = await requireSupabase().rpc('xa_submit_to_daaa', {
     p_item_id: itemId,
