@@ -26,6 +26,14 @@ export function XADashboardPage() {
 
   const stats = computeStats(items)
 
+  const batchNames = Array.from(new Set(items.map((item) => item.batch || 'Unassigned Batch'))).sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true })
+  )
+  const batchStats = batchNames.map((name) => ({
+    name,
+    stats: computeStats(items.filter((item) => (item.batch || 'Unassigned Batch') === name)),
+  }))
+
   return (
     <div className="space-y-6">
       <div>
@@ -33,7 +41,11 @@ export function XADashboardPage() {
         <p className="text-sm text-brand-slate">CP19 — Panel Boards, Breakers, Meter Center & Switch Gear</p>
       </div>
 
-      <ProjectKpiPanel stats={stats} />
+      <ProjectKpiPanel stats={stats} title="Overall Project Progress" />
+
+      {batchStats.map((b) => (
+        <ProjectKpiPanel key={b.name} stats={b.stats} title={`${b.name} Progress`} />
+      ))}
 
       <div className="rounded-2xl border border-brand-line bg-white p-5 shadow-card">
         <h2 className="mb-4 text-sm font-bold text-brand-ink">Deadlines</h2>

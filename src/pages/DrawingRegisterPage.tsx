@@ -13,6 +13,7 @@ export function DrawingRegisterPage() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<DrawingStatus | 'all'>('all')
+  const [batchFilter, setBatchFilter] = useState<string>('all')
   const [showAdd, setShowAdd] = useState(false)
   const [importBusy, setImportBusy] = useState(false)
   const [importMsg, setImportMsg] = useState('')
@@ -33,8 +34,15 @@ export function DrawingRegisterPage() {
     listAllProfiles().then((all) => setDraftsmen(all.filter((p) => p.role === 'draftsman')))
   }, [])
 
+  const batches = useMemo(() => {
+    const names = Array.from(new Set(items.map((item) => item.batch || 'Unassigned Batch')))
+    names.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    return names.map((name) => ({ name, count: items.filter((i) => (i.batch || 'Unassigned Batch') === name).length }))
+  }, [items])
+
   const filtered = useMemo(() => {
     return items.filter((item) => {
+      if (batchFilter !== 'all' && (item.batch || 'Unassigned Batch') !== batchFilter) return false
       if (statusFilter !== 'all' && item.status !== statusFilter) return false
       if (!query.trim()) return true
       const q = query.toLowerCase()
@@ -44,7 +52,7 @@ export function DrawingRegisterPage() {
         (item.category ?? '').toLowerCase().includes(q)
       )
     })
-  }, [items, query, statusFilter])
+  }, [items, query, statusFilter, batchFilter])
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -100,7 +108,7 @@ export function DrawingRegisterPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-brand-ink">Drawing Register</h1>
-          <p className="text-sm text-brand-slate">{items.length} items, sorted by item number</p>
+          <p className="text-sm text-brand-slate">{filtered.length} of {items.length} items, sorted by item number</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-brand-line px-3 py-2 text-sm font-semibold text-brand-ink hover:bg-slate-50">
@@ -118,6 +126,28 @@ export function DrawingRegisterPage() {
       </div>
 
       {importMsg && <p className="rounded-lg bg-brand-tint px-3 py-2 text-sm text-brand-ink">{importMsg}</p>}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setBatchFilter('all')}
+          className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+            batchFilter === 'all' ? 'bg-brand-ink text-white' : 'border border-brand-line text-brand-ink hover:bg-slate-50'
+          }`}
+        >
+          All ({items.length})
+        </button>
+        {batches.map((b) => (
+          <button
+            key={b.name}
+            onClick={() => setBatchFilter(b.name)}
+            className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+              batchFilter === b.name ? 'bg-brand-ink text-white' : 'border border-brand-line text-brand-ink hover:bg-slate-50'
+            }`}
+          >
+            {b.name} ({b.count})
+          </button>
+        ))}
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-1 items-center gap-2 rounded-lg border border-brand-line bg-white px-3 py-2">
