@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ListChecks, ClipboardCheck, Stamp, Users, LogOut, Eye } from 'lucide-react'
+import { LayoutDashboard, ListChecks, ClipboardCheck, Stamp, Users, LogOut, Eye, FileBarChart } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import type { AppRole } from '@/types'
 
@@ -15,6 +15,7 @@ const NAV: Record<AppRole, { to: string; label: string; icon: typeof LayoutDashb
   xa_admin: [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/register', label: 'Drawing Register', icon: ListChecks },
+    { to: '/report', label: 'Report', icon: FileBarChart },
     { to: '/users', label: 'Users', icon: Users },
   ],
   draftsman: [

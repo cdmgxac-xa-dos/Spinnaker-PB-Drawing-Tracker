@@ -39,6 +39,7 @@ export function DrawingListTable({
     }
     catGroup.rows.push(item)
   }
+  batches.sort((a, b) => a.batch.localeCompare(b.batch, undefined, { numeric: true }))
 
   return (
     <div className="space-y-8">

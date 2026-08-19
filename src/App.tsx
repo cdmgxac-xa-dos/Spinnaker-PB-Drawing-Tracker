@@ -7,6 +7,7 @@ import { RoleHomePage } from '@/pages/RoleHomePage'
 import { DrawingRegisterPage } from '@/pages/DrawingRegisterPage'
 import { DrawingDetailPage } from '@/pages/DrawingDetailPage'
 import { UsersPage } from '@/pages/UsersPage'
+import { ReportPage } from '@/pages/ReportPage'
 import { ClientDashboardPage } from '@/pages/ClientDashboardPage'
 import { DraftsmanPage } from '@/pages/DraftsmanPage'
 import { DAAAReviewPage } from '@/pages/DAAAReviewPage'
@@ -48,6 +49,7 @@ export default function App() {
           <Route element={<ProtectedRoute allow={['xa_admin']} />}>
             <Route path="/register" element={<DrawingRegisterPage />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/report" element={<ReportPage />} />
           </Route>
         </Route>
       </Route>

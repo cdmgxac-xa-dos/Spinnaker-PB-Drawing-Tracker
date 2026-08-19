@@ -1,7 +1,15 @@
 import type { DrawingItem } from '@/types'
 
-export function DraftsmanWorkloadSummary({ items }: { items: DrawingItem[] }) {
-  const byDraftsman = new Map<string, { name: string; assigned: number; ongoing: number; completed: number; total: number }>()
+export interface DraftsmanWorkloadRow {
+  name: string
+  assigned: number
+  ongoing: number
+  completed: number
+  total: number
+}
+
+export function computeDraftsmanWorkload(items: DrawingItem[]): DraftsmanWorkloadRow[] {
+  const byDraftsman = new Map<string, DraftsmanWorkloadRow>()
 
   for (const item of items) {
     if (!item.assigned_draftsman) continue
@@ -17,7 +25,11 @@ export function DraftsmanWorkloadSummary({ items }: { items: DrawingItem[] }) {
     else if (['approved', 'completed'].includes(item.status)) row.completed++
   }
 
-  const rows = Array.from(byDraftsman.values()).sort((a, b) => b.total - a.total)
+  return Array.from(byDraftsman.values()).sort((a, b) => b.total - a.total)
+}
+
+export function DraftsmanWorkloadSummary({ items }: { items: DrawingItem[] }) {
+  const rows = computeDraftsmanWorkload(items)
 
   if (rows.length === 0) {
     return <p className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-brand-slate">No drawings assigned to any draftsman yet.</p>
