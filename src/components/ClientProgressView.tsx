@@ -10,7 +10,7 @@ import {
   type ClientPdfRow,
 } from '@/services/clientDashboardService'
 import type { DrawingStatus } from '@/types'
-import { DRAWING_STATUSES, STATUS_LABELS } from '@/types'
+import { DRAFTSMAN_ACTIVE_STATUSES, DRAWING_STATUSES, STATUS_LABELS } from '@/types'
 
 /**
  * The read-only progress view: stats and a drawing list grouped by batch
@@ -55,7 +55,7 @@ export function ClientProgressView() {
   const revisionRequired = drawings.filter((d) => d.status === 'revision_required').length
   const today = new Date().toISOString().slice(0, 10)
   const overdue = drawings.filter(
-    (d) => d.target_submission_date && d.target_submission_date < today && !['approved', 'completed'].includes(d.status)
+    (d) => d.target_submission_date && d.target_submission_date < today && DRAFTSMAN_ACTIVE_STATUSES.includes(d.status)
   ).length
   const progressPct = total > 0 ? Math.round((approvedOrCompleted / total) * 100) : 0
 

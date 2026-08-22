@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { StatusBadge } from '@/components/StatusBadge'
 import type { DrawingItem } from '@/types'
+import { DRAFTSMAN_ACTIVE_STATUSES } from '@/types'
 
 export function DrawingListTable({
   items,
@@ -74,7 +75,7 @@ export function DrawingListTable({
                       const overdue =
                         item.target_submission_date &&
                         item.target_submission_date < today &&
-                        !['approved', 'completed'].includes(item.status)
+                        DRAFTSMAN_ACTIVE_STATUSES.includes(item.status)
                       return (
                         <div
                           key={item.id}

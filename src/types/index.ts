@@ -45,6 +45,14 @@ export const DRAWING_STATUSES: DrawingStatus[] = [
   'completed',
 ]
 
+// target_submission_date is the draftsman's deadline for submitting a
+// drawing for internal review — it's not a review-stage deadline. Once an
+// item leaves the draftsman's hands (submitted onward, or bounced to
+// Revision Required awaiting reassignment), that date is no longer a live
+// deadline anyone is working against, so "Overdue" / deadline tracking
+// only applies while status is one of these three.
+export const DRAFTSMAN_ACTIVE_STATUSES: DrawingStatus[] = ['assigned', 'drafting', 'internal_review']
+
 export const STATUS_LABELS: Record<DrawingStatus, string> = {
   not_started: 'Not Started',
   assigned: 'Assigned',

@@ -1,6 +1,6 @@
 import { requireSupabase } from '@/lib/supabaseClient'
 import type { DashboardStats, DrawingItem, DrawingStatus, ReviewHistoryEntry } from '@/types'
-import { DRAWING_STATUSES } from '@/types'
+import { DRAWING_STATUSES, DRAFTSMAN_ACTIVE_STATUSES } from '@/types'
 
 const ITEM_SELECT = `*, assigned_profile:profiles!drawing_items_assigned_draftsman_fkey(full_name)`
 
@@ -70,7 +70,7 @@ export function computeStats(items: DrawingItem[]): DashboardStats {
     if (
       item.target_submission_date &&
       item.target_submission_date < today &&
-      !['approved', 'completed'].includes(item.status)
+      DRAFTSMAN_ACTIVE_STATUSES.includes(item.status)
     ) {
       overdue++
     }

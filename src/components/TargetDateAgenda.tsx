@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, CalendarClock, CalendarDays, Clock } from 'lucide-react'
 import { StatusBadge } from '@/components/StatusBadge'
 import type { DrawingStatus } from '@/types'
+import { DRAFTSMAN_ACTIVE_STATUSES } from '@/types'
 
 export interface AgendaItem {
   id: string
@@ -24,7 +25,10 @@ export function TargetDateAgenda({ items, clickable = true }: { items: AgendaIte
   const in7 = addDays(today, 7)
   const in30 = addDays(today, 30)
 
-  const pending = items.filter((i) => !['approved', 'completed'].includes(i.status))
+  // Only while a drawing is still with the draftsman is target_submission_date a
+  // live deadline anyone is working against — once it moves on to review (or is
+  // bounced back for reassignment), that date no longer means "due."
+  const pending = items.filter((i) => DRAFTSMAN_ACTIVE_STATUSES.includes(i.status))
   const withDate = pending.filter((i) => i.target_submission_date).sort((a, b) =>
     (a.target_submission_date ?? '').localeCompare(b.target_submission_date ?? '')
   )

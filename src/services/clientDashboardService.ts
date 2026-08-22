@@ -1,6 +1,6 @@
 import { requireSupabase } from '@/lib/supabaseClient'
 import type { DashboardStats, DrawingStatus } from '@/types'
-import { DRAWING_STATUSES } from '@/types'
+import { DRAWING_STATUSES, DRAFTSMAN_ACTIVE_STATUSES } from '@/types'
 
 export interface ClientDrawingRow {
   id: string
@@ -64,7 +64,7 @@ export function computeClientStats(rows: ClientDrawingRow[]): DashboardStats {
   const today = new Date().toISOString().slice(0, 10)
   for (const row of rows) {
     byStatus[row.status]++
-    if (row.target_submission_date && row.target_submission_date < today && !['approved', 'completed'].includes(row.status)) {
+    if (row.target_submission_date && row.target_submission_date < today && DRAFTSMAN_ACTIVE_STATUSES.includes(row.status)) {
       overdue++
     }
   }
